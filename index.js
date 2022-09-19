@@ -101,12 +101,9 @@ app.post("/login", function (req, res) {
             res.status(401).json({ message: "Lỗi tìm user" })
 
         } else if (user) {
-            if (!user.comparePassword(req.body.password)) {
-                res.status(401).json({ message: 'Lỗi mật khẩu' })
-            } else {
-                return res.json({ token: jwt.sign({ emailaddres: user.emailaddres, fullName: req.body.fullName, _id: req.body._id }, 'RESFULLAPIs') })
+            return res.json({ token: jwt.sign({ emailaddres: user.emailaddres, fullName: req.body.fullName, _id: req.body._id }, 'RESFULLAPIs') })
 
-            }
+
         }
     })
 })
