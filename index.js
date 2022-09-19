@@ -4,6 +4,9 @@ var bodyParse = require("body-parser")
 var cors = require("cors")
 var db = require("./public/src/config/mongodbconnect")
 var Customer = require("./public/src/model/entity")
+var jwt = require("jsonwebtoken")
+var bcrypt = require("bcryptjs")
+var User = require("./public/src/model/Users")
 app.get("/hello", function (req, res) {
     res.json("Hello anh dương")
 })
@@ -38,44 +41,80 @@ app.get("/getList", function (req, res) {
     })
 })
 //Cập nhật dũ liệu vào
-app.get('/edit/:id',function (req,res) {
-    var id=req.params.id
-    Customer.findById(id,function (err,customer) {
+app.get('/edit/:id', function (req, res) {
+    var id = req.params.id
+    Customer.findById(id, function (err, customer) {
         res.json(customer)
     })
 })
-app.post("/update/:id",function (req,res) {
-    Customer.findById(req.params.id,function (err,customer) {
+app.post("/update/:id", function (req, res) {
+    Customer.findById(req.params.id, function (err, customer) {
         if (!customer) {
             res.status(400).send("Lỗi gửi dữ liệu")
         }
-        else{
+        else {
             console.log(customer)
-            customer.email=req.body.email;
-            customer.first_name=req.body.first_name;
-            customer.last_name=req.body.last_name;
+            customer.email = req.body.email;
+            customer.first_name = req.body.first_name;
+            customer.last_name = req.body.last_name;
             customer.save()
-            .then(customer=>{
-                res.json("Cập nhật thành công")
-            })
-            .catch(err=>{
-                res.status(400).send("Lỗi cập nhật dữ liệu")
-            })
+                .then(customer => {
+                    res.json("Cập nhật thành công")
+                })
+                .catch(err => {
+                    res.status(400).send("Lỗi cập nhật dữ liệu")
+                })
         }
     })
 })
 //Xóa dữ liệu khỏi cơ sở dữ liệu
-app.get("/delete/:id",function (req,res) {
-    Customer.findByIdAndRemove({_id:req.params.id,},function (err,customer) {
+app.get("/delete/:id", function (req, res) {
+    Customer.findByIdAndRemove({ _id: req.params.id, }, function (err, customer) {
         if (err) {
             res.status(400)
-            .json(err)
+                .json(err)
         }
-        else{
+        else {
             res.json("Xóa thành công nhé bạn")
         }
     })
 })
+//Sử dụng login và register với jwt trong node with react js
+app.post("/register", function (req, res) {
+    var User = new User(req.body)
+    User.password = bcrypt.hashSync(req.body.password, 10);
+    User.save(function (err, user) {
+        if (err) {
+            res.status(400).send({
+                'message': err
+            })
+        } else {
+            user.password = undefined
+            return res.json(user)
+        }
+    })
+})
+//Đăng nhập vào
+app.post("/login", function (req, res) {
+    User.findOne({
+        emailaddres: req.body.emailaddres
+    }, function (err, user) {
+        if (err) throw err;
+        if (!user) {
+            res.status(401).json({ message: "Lỗi tìm user" })
+
+        } else if (user) {
+            if (!user.comparePassword(req.body.password)) {
+                res.status(401).json({ message: 'Lỗi mật khẩu' })
+            } else {
+                return res.json({ token: jwt.sign({ emailaddres: user.emailaddres, fullName: req.body.fullName, _id: req.body._id }, 'RESFULLAPIs') })
+
+            }
+        }
+    })
+})
+//Kiểm tra tk đã login chưa
+
 var service = app.listen(8000, function (host, port) {
     var host = service.address().address
     var port = service.address().port
