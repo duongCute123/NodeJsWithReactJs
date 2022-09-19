@@ -7,7 +7,4 @@ const User = new Schema({
     passwork: { type: String },
     created: { type: Date }
 })
-User.method.comparePassword=function (password) {
-    return bcrypt.compareSync(password,this.passwork)
-}
 module.exports=mongoose.model("User",User)

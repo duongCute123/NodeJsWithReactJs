@@ -81,18 +81,15 @@ app.get("/delete/:id", function (req, res) {
 })
 //Sử dụng login và register với jwt trong node with react js
 app.post("/register", function (req, res) {
-    var User = new User(req.body)
-    User.password = bcrypt.hashSync(req.body.password, 10);
-    User.save(function (err, user) {
-        if (err) {
-            res.status(400).send({
-                'message': err
-            })
-        } else {
-            user.password = undefined
-            return res.json(user)
-        }
-    })
+    var data = req.body
+    var user = new User(data)
+    user.save()
+        .then(user => {
+            res.json({ user: "Thêm thành công nhá" })
+        })
+        .catch(err => {
+            res.json({ err: "Lỗi thêm rồi" })
+        })
 })
 //Đăng nhập vào
 app.post("/login", function (req, res) {
@@ -114,7 +111,19 @@ app.post("/login", function (req, res) {
     })
 })
 //Kiểm tra tk đã login chưa
-
+app.get('/')
+app.use(function (req, res, next) {
+    if (req.headers && req.headers.authorization && req.headers.authorization.split('')[0] === 'JWT') {
+        jwt.verify(req.headers.authorization.split('')[1], 'RESFULLAPIs', function (err, code) {
+            if (err) req.user = undefined
+            req.user = code
+            next();
+        })
+    } else {
+        req.user = undefined
+        next();
+    }
+})
 var service = app.listen(8000, function (host, port) {
     var host = service.address().address
     var port = service.address().port
